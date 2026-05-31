@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+config();
+
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
@@ -11,8 +14,8 @@ export default defineConfig({
   integrations: [
     // 👇 update these lines
     sanity({
-      projectId: "98il5c52",
-      dataset: "production",
+      projectId: process.env.SANITY_PROJECT_ID,
+      dataset: process.env.SANITY_DATASET,
       useCdn: false, // for static builds
     }),
   ],
