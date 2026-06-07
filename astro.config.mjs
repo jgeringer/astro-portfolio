@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import react from '@astrojs/react';
 config();
 
 import tailwindcss from "@tailwindcss/vite";
@@ -18,5 +19,6 @@ export default defineConfig({
       dataset: process.env.SANITY_DATASET,
       useCdn: false, // for static builds
     }),
+    react(),
   ],
 });

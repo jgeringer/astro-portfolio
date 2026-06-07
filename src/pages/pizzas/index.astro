@@ -74,7 +74,6 @@ const styleOptions = Array.from(styleOptionsMap.entries())
     </header>
 
     <section aria-label="Pizza filters" class="mb-8 rounded-lg border p-4">
-      <h2 class="text-xl font-semibold mb-4">Filters</h2>
       <form class="grid gap-4 md:grid-cols-2 lg:grid-cols-4" onsubmit="return false;">
         <label class="flex flex-col gap-1" for="styleFilter">
           <span>{settings?.stylesFilterLabel ?? "Styles"}</span>
@@ -109,7 +108,7 @@ const styleOptions = Array.from(styleOptionsMap.entries())
     <p id="noResultsMessage" class="mb-6 hidden">No pizzas match the selected filters.</p>
 
     <ul id="pizzaList" class="grid gap-6 md:grid-cols-2">
-      {pizzas.map((pizza) => {
+      {pizzas.map((pizza, index) => {
         const styleSlugs = (pizza.styles ?? [])
           .map((style) => style.slug?.current)
           .filter((slug): slug is string => Boolean(slug));
@@ -117,32 +116,59 @@ const styleOptions = Array.from(styleOptionsMap.entries())
 
         return (
           <li
-            class="pizza-item rounded-lg border"
+            class:list={[
+              "pizza-item transition-transform duration-200 hover:-translate-y-1 hover:rotate-0",
+              index % 5 === 0 && "rotate-[-1.4deg]",
+              index % 5 === 1 && "rotate-[1.1deg]",
+              index % 5 === 2 && "rotate-[-0.8deg]",
+              index % 5 === 3 && "rotate-[1.4deg]",
+              index % 5 === 4 && "rotate-[-1.1deg]",
+            ]}
             data-style-slugs={styleSlugs.join(",")}
             data-highlights={highlightsText}
             data-established-year={pizza.establishedYear ?? 0}
           >
-            <a href={`/pizzas/${pizza.slug?.current}`} class="block h-full p-4 hover:underline">
-              {pizza.heroImage?.path && (
-                <img
-                  src={`${pizza.heroImage.path}?twic=v1/cover=800x600/format=webp`}
-                  alt={pizza.heroImage.altText ?? `${pizza.name ?? "Pizza"} image`}
-                  class="mb-4 aspect-video w-full rounded object-cover"
-                  width="640"
-                  height="360"
-                  loading="lazy"
-                />
-              )}
-              <h2 class="text-2xl font-semibold">{pizza.name}</h2>
-              {pizza.summary && <p class="mt-2">{pizza.summary}</p>}
-              {!!pizza.establishedYear && <p class="mt-2 text-sm">Established: {pizza.establishedYear}</p>}
-              {!!pizza.styles?.length && (
-                <ul class="mt-3 flex flex-wrap gap-2" aria-label="Pizza styles">
-                  {pizza.styles.map((style) => (
-                    <li class="rounded border px-2 py-1 text-sm">{style.title}</li>
-                  ))}
-                </ul>
-              )}
+            <a href={`/pizzas/${pizza.slug?.current}`} class="group block h-full no-underline">
+              <article class="rounded border-2 border-red-800 bg-[#fffdf4] p-3 shadow-[8px_8px_0px_#991b1b]">
+                <div class="rounded border-2 border-red-600 bg-[linear-gradient(45deg,rgba(220,38,38,0.14)_25%,transparent_25%,transparent_50%,rgba(220,38,38,0.14)_50%,rgba(220,38,38,0.14)_75%,transparent_75%,transparent)] bg-[length:26px_26px] p-3">
+                  <header class="rounded border-2 border-green-700 bg-[#fffaf0] px-3 py-2 text-center">
+                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-green-800">Oven Fresh</p>
+                    <h2 class="mt-1 text-2xl font-black uppercase leading-tight text-green-900 group-hover:underline">
+                      {pizza.name}
+                    </h2>
+                    {!!pizza.establishedYear && (
+                      <p class="mt-1 text-sm font-semibold text-green-800">Est. {pizza.establishedYear}</p>
+                    )}
+                  </header>
+
+                  {pizza.heroImage?.path && (
+                    <img
+                      src={`${pizza.heroImage.path}?twic=v1/cover=800x600/format=webp`}
+                      alt={pizza.heroImage.altText ?? `${pizza.name ?? "Pizza"} image`}
+                      class="mt-3 aspect-video w-full rounded border-2 border-red-700 object-cover"
+                      width="640"
+                      height="360"
+                      loading="lazy"
+                    />
+                  )}
+
+                  {pizza.summary && (
+                    <p class="mt-3 text-sm font-medium text-red-900">
+                      {pizza.summary}
+                    </p>
+                  )}
+
+                  {!!pizza.styles?.length && (
+                    <ul class="mt-3 flex flex-wrap justify-center gap-2" aria-label="Pizza styles">
+                      {pizza.styles.map((style) => (
+                        <li class="rounded border border-red-700 bg-white/80 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-800">
+                          {style.title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </article>
             </a>
           </li>
         );

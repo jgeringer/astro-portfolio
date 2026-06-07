@@ -70,7 +70,7 @@ export async function getStaticPaths(): Promise<{ params: { slug: string } }> {
 
 <MainLayout title={`${pizza?.name ?? "Pizza"} | Pizzas`}>
 <main class="container mx-auto min-h-screen max-w-5xl p-8 flex flex-col gap-6">
-  <a href="/pizzas" class="hover:underline">&larr; Back to pizzas</a>
+  <a href="/pizzas" class="hover:underline">&larr; Back to all pizzarias</a>
 
   {
     !pizza ? (
@@ -81,8 +81,12 @@ export async function getStaticPaths(): Promise<{ params: { slug: string } }> {
     ) : (
       <>
         <header class="space-y-3">
-          <h1 class="text-4xl font-bold">{pizza.name}</h1>
-          {pizza.summary && <p class="text-lg">{pizza.summary}</p>}
+
+            <div class="rounded-xl border-2 border-green-700 bg-[#fffaf0] px-3 py-2 text-center">
+                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-green-800">Oven Fresh</p>
+                <h2 class="mt-1 text-2xl font-black uppercase leading-tight text-green-900 group-hover:underline">{pizza.name}</h2>
+                <p class="mt-1 text-sm font-semibold text-green-800">Est. {pizza.establishedYear}</p>
+            </div>
 
           {pizza.heroImage?.path && (
             <img
@@ -93,6 +97,8 @@ export async function getStaticPaths(): Promise<{ params: { slug: string } }> {
               height="720"
             />
           )}
+
+          {pizza.summary && <p class="text-lg">{pizza.summary}</p>}
         </header>
 
         <section aria-labelledby="pizza-details-heading">

@@ -2,16 +2,26 @@
 import MainLayout from '../layouts/main.astro';
 // Component Imports
 import Button from '../components/Button.astro';
+import PspWaveBackground from '../components/PspWaveBackground.jsx';
 
 // Full Astro Component Syntax:
 // https://docs.astro.build/basics/astro-components/
 ---
 
 <MainLayout title="Home | Astro Portfolio">
-	<div class="flex-1 grid place-items-center">
-		<div>
-			<Button>Tailwind Button in Astro!</Button>
-			<a href="/markdown-page" class="p-4 underline">Markdown is also supported...</a>
+	<PspWaveBackground client:only="react" />
+	<div class="relative z-10 flex-1 grid place-items-center px-8">
+		<div class="w-full max-w-6xl text-white">
+			<p class="text-sm tracking-[0.35em] text-blue-100/90">JOE GERINGER</p>
+			<h1 class="mt-3 text-4xl font-extrabold md:text-6xl">Frontend Web Developer</h1>
+			<p class="mt-4 max-w-2xl text-lg text-blue-100/90">
+				Frontend web dev and Chicago pizza nerd.
+			</p>
+			<div class="mt-8">
+				<a href="/resume" class="mr-4">About / Resume</a>
+				<a href="/blog" class="mr-4">Read the Blog</a>
+				<a href="/pizzas">Discover Pizzas</a>
+			</div>
 		</div>
 	</div>
 </MainLayout>

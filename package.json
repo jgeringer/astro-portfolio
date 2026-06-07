@@ -13,6 +13,10 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^6.0.1",
+    "@astrojs/react": "^5.0.7",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/rapier": "^2.2.0",
     "@sanity/astro": "^3.4.0",
     "@sanity/client": "^7.22.1",
     "@sanity/image-url": "^2.1.1",
@@ -28,6 +32,7 @@
     "react-is": "^19.2.6",
     "sanity": "^5.28.0",
     "styled-components": "^6.4.2",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "three": "^0.184.0"
   }
 }
