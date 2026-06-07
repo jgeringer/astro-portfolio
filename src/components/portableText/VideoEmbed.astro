@@ -1,0 +1,32 @@
+---
+type VideoEmbedNode = {
+  title?: string;
+  url?: string;
+  caption?: string;
+};
+
+const { node } = Astro.props as { node: VideoEmbedNode };
+---
+
+<figure class="my-6">
+  {node?.title && <figcaption class="font-semibold">{node.title}</figcaption>}
+  {
+    node?.url && (
+        <video
+            controls
+            preload="metadata"
+            playsinline
+            autoplay
+            loop
+            muted
+            class="w-full rounded-lg object-cover"
+            >
+            <source
+                src={node.url}
+                type="video/mp4"
+            />
+        </video>
+    )
+  }
+  {node?.caption && <p class="mt-2 text-sm">{node.caption}</p>}
+</figure>

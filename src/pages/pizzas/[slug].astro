@@ -1,0 +1,518 @@
+---
+import MainLayout from "../../layouts/main.astro";
+import { sanityClient } from "sanity:client";
+import { PortableText } from "astro-portabletext";
+import { portableTextComponents } from "../../components/portableText/components";
+
+type LinkItem = {
+  label?: string;
+  url?: string;
+  description?: string;
+};
+
+type Pizza = {
+  name?: string;
+  slug?: { current?: string };
+  summary?: string;
+  heroImage?: { path?: string; altText?: string };
+  gallery?: Array<{ _key?: string; path?: string; altText?: string; caption?: string }>;
+  establishedYear?: number;
+  address?: string;
+  phone?: string;
+  website?: string;
+  googleMapsUrl?: string;
+  area?: string;
+  styles?: Array<{ title?: string; slug?: { current?: string } }>;
+  highlights?: string[];
+  body?: unknown[];
+  additionalLinks?: LinkItem[];
+};
+
+const PIZZA_QUERY = `*[_type == "pizza" && slug.current == $slug][0]{
+  name,
+  slug,
+  summary,
+  heroImage,
+  gallery,
+  establishedYear,
+  address,
+  phone,
+  website,
+  googleMapsUrl,
+  area,
+  highlights,
+  body,
+  additionalLinks,
+  styles[]->{
+    title,
+    slug
+  }
+}`;
+const pizza = await sanityClient.fetch<Pizza | null>(PIZZA_QUERY, Astro.params);
+
+const areaLabelMap: Record<string, string> = {
+  "north-side": "North Side",
+  "south-side": "South Side",
+  "west-side": "West Side",
+  downtown: "Downtown",
+  burbs: "Burbs",
+  other: "Other",
+};
+
+export async function getStaticPaths(): Promise<{ params: { slug: string } }> {
+    const SLUGS_QUERY = `*[_type == "pizza" && defined(slug.current)]{
+        "params": {"slug": slug.current}
+    }`;
+    return await sanityClient.fetch(SLUGS_QUERY);
+}
+
+---
+
+<MainLayout title={`${pizza?.name ?? "Pizza"} | Pizzas`}>
+<main class="container mx-auto min-h-screen max-w-5xl p-8 flex flex-col gap-6">
+  <a href="/pizzas" class="hover:underline">&larr; Back to pizzas</a>
+
+  {
+    !pizza ? (
+      <section aria-labelledby="pizza-unavailable">
+        <h1 id="pizza-unavailable" class="text-3xl font-bold">Pizza not found</h1>
+        <p>The requested pizza page could not be loaded.</p>
+      </section>
+    ) : (
+      <>
+        <header class="space-y-3">
+          <h1 class="text-4xl font-bold">{pizza.name}</h1>
+          {pizza.summary && <p class="text-lg">{pizza.summary}</p>}
+
+          {pizza.heroImage?.path && (
+            <img
+              src={pizza.heroImage.path}
+              alt={pizza.heroImage.altText ?? `${pizza.name ?? "Pizza"} hero image`}
+              class="mt-4 aspect-video w-full rounded-xl object-cover"
+              width="1280"
+              height="720"
+            />
+          )}
+        </header>
+
+        <section aria-labelledby="pizza-details-heading">
+          <h2 id="pizza-details-heading" class="text-2xl font-semibold mb-3">Details</h2>
+          <dl class="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {pizza.establishedYear && (
+              <div>
+                <dt class="font-semibold">Established</dt>
+                <dd>{pizza.establishedYear}</dd>
+              </div>
+            )}
+
+            {pizza.area && (
+              <div>
+                <dt class="font-semibold">Area</dt>
+                <dd>{areaLabelMap[pizza.area] ?? pizza.area}</dd>
+              </div>
+            )}
+
+            {pizza.address && (
+              <div>
+                <dt class="font-semibold">Address</dt>
+                <dd>{pizza.address}</dd>
+              </div>
+            )}
+
+            {pizza.phone && (
+              <div>
+                <dt class="font-semibold">Phone</dt>
+                <dd>
+                  <a href={`tel:${pizza.phone.replace(/[^\d+]/g, "")}`} class="underline">
+                    {pizza.phone}
+                  </a>
+                </dd>
+              </div>
+            )}
+
+            {pizza.website && (
+              <div>
+                <dt class="font-semibold">Website</dt>
+                <dd>
+                  <a href={pizza.website} target="_blank" rel="noreferrer" class="underline">
+                    Visit website
+                  </a>
+                </dd>
+              </div>
+            )}
+
+            {pizza.googleMapsUrl && (
+              <div>
+                <dt class="font-semibold">Map</dt>
+                <dd>
+                  <a href={pizza.googleMapsUrl} target="_blank" rel="noreferrer" class="underline">
+                    Open in Google Maps
+                  </a>
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        {!!pizza.styles?.length && (
+          <section aria-labelledby="pizza-styles-heading">
+            <h2 id="pizza-styles-heading" class="text-2xl font-semibold mb-3">Styles</h2>
+            <ul class="flex flex-wrap gap-2">
+              {pizza.styles.map((style) => (
+                <li class="rounded border px-3 py-1">{style.title}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {!!pizza.highlights?.length && (
+          <section aria-labelledby="pizza-highlights-heading">
+            <h2 id="pizza-highlights-heading" class="text-2xl font-semibold mb-3">Highlights</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              {pizza.highlights.map((highlight) => (
+                <li>{highlight}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {Array.isArray(pizza.body) && pizza.body.length > 0 && (
+          <section aria-labelledby="pizza-notes-heading">
+            <h2 id="pizza-notes-heading" class="text-2xl font-semibold mb-3">Notes</h2>
+            <div class="prose max-w-none">
+              <PortableText value={pizza.body} components={portableTextComponents} />
+            </div>
+          </section>
+        )}
+
+        {!!pizza.gallery?.length && (
+          <section aria-labelledby="pizza-gallery-heading">
+            <h2 id="pizza-gallery-heading" class="text-2xl font-semibold mb-3">Gallery</h2>
+            <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {pizza.gallery.map((image) => (
+                <li>
+                  <figure>
+                    <button
+                      type="button"
+                      class="block w-full cursor-zoom-in"
+                      data-gallery-image
+                      data-alt={image.altText ?? `${pizza.name ?? "Pizza"} gallery image`}
+                      data-thumb-src={`${image.path}?twic=v1/cover=600x600/format=webp`}
+                      data-full-src={`${image.path}?twic=v1/cover=1800x1200/format=webp`}
+                    >
+                      <img
+                        src={`${image.path}?twic=v1/cover=600x600/format=webp`}
+                        alt={image.altText ?? `${pizza.name ?? "Pizza"} gallery image`}
+                        class="aspect-square w-full rounded-lg object-cover"
+                        width="600"
+                        height="600"
+                        loading="lazy"
+                      />
+                    </button>
+                    {image.caption && <figcaption class="mt-2 text-sm">{image.caption}</figcaption>}
+                  </figure>
+                </li>
+              ))}
+            </ul>
+
+            <div
+              id="gallery-lightbox"
+              class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 opacity-0 transition-opacity duration-300"
+              aria-hidden="true"
+            >
+              <button
+                id="gallery-lightbox-close"
+                type="button"
+                class="absolute right-4 top-4 rounded bg-white/90 px-3 py-1 text-sm font-semibold text-black"
+                aria-label="Close full screen image"
+              >
+                Close
+              </button>
+              <img
+                id="gallery-lightbox-image"
+                src=""
+                alt=""
+                class="max-h-[90vh] w-auto max-w-[95vw] touch-none select-none rounded-lg object-contain shadow-2xl transition-transform duration-300"
+                style="transform: scale(0.92);"
+              />
+            </div>
+          </section>
+        )}
+
+        {!!pizza.additionalLinks?.length && (
+          <section aria-labelledby="pizza-links-heading">
+            <h2 id="pizza-links-heading" class="text-2xl font-semibold mb-3">Additional Links</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              {pizza.additionalLinks.map((link) => (
+                <li>
+                  <a href={link.url} target="_blank" rel="noreferrer" class="underline">
+                    {link.label}
+                  </a>
+                  {link.description && <span> - {link.description}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </>
+    )
+  }
+</main>
+</MainLayout>
+
+<script>
+  const galleryButtons = document.querySelectorAll("[data-gallery-image]");
+  const lightbox = document.getElementById("gallery-lightbox");
+  const lightboxImage = document.getElementById("gallery-lightbox-image");
+  const lightboxClose = document.getElementById("gallery-lightbox-close");
+
+  const minScale = 1;
+  const maxScale = 4;
+  let scale = 1;
+  let translateX = 0;
+  let translateY = 0;
+
+  const pointers = new Map();
+  let isDragging = false;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let pinchStartDistance = 0;
+  let pinchStartScale = 1;
+  let pinchStartTranslateX = 0;
+  let pinchStartTranslateY = 0;
+  let pinchStartCenterX = 0;
+  let pinchStartCenterY = 0;
+
+  const isDesktop = () => window.matchMedia("(min-width: 1024px)").matches;
+
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  const getBounds = () => {
+    if (!(lightboxImage instanceof HTMLImageElement)) {
+      return { x: 0, y: 0 };
+    }
+
+    const maxX = (lightboxImage.offsetWidth * (scale - 1)) / 2;
+    const maxY = (lightboxImage.offsetHeight * (scale - 1)) / 2;
+
+    return { x: maxX, y: maxY };
+  };
+
+  const clampPan = () => {
+    const bounds = getBounds();
+    translateX = clamp(translateX, -bounds.x, bounds.x);
+    translateY = clamp(translateY, -bounds.y, bounds.y);
+  };
+
+  const applyTransform = (withTransition = false) => {
+    if (!(lightboxImage instanceof HTMLImageElement)) return;
+
+    lightboxImage.style.transition = withTransition
+      ? "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)"
+      : "none";
+    lightboxImage.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+    lightboxImage.style.cursor = scale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in";
+  };
+
+  const resetTransformState = () => {
+    scale = 1;
+    translateX = 0;
+    translateY = 0;
+    isDragging = false;
+    pointers.clear();
+    pinchStartDistance = 0;
+    pinchStartScale = 1;
+    pinchStartTranslateX = 0;
+    pinchStartTranslateY = 0;
+    pinchStartCenterX = 0;
+    pinchStartCenterY = 0;
+  };
+
+  const getDistance = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+  const getCenter = (a, b) => ({
+    x: (a.clientX + b.clientX) / 2,
+    y: (a.clientY + b.clientY) / 2,
+  });
+
+  const initializePinch = () => {
+    if (pointers.size !== 2) return;
+    const [a, b] = Array.from(pointers.values());
+    pinchStartDistance = getDistance(a, b);
+    pinchStartScale = scale;
+    pinchStartTranslateX = translateX;
+    pinchStartTranslateY = translateY;
+    const center = getCenter(a, b);
+    pinchStartCenterX = center.x;
+    pinchStartCenterY = center.y;
+    isDragging = false;
+  };
+
+  const openLightbox = (button) => {
+    if (!(lightbox instanceof HTMLDivElement) || !(lightboxImage instanceof HTMLImageElement)) return;
+
+    const thumbSrc = button.getAttribute("data-thumb-src") || "";
+    const fullSrc = button.getAttribute("data-full-src") || thumbSrc;
+    const alt = button.getAttribute("data-alt") || "Gallery image";
+
+    resetTransformState();
+    lightboxImage.src = isDesktop() ? fullSrc : thumbSrc;
+    lightboxImage.alt = alt;
+
+    lightbox.setAttribute("aria-hidden", "false");
+    lightbox.classList.remove("pointer-events-none", "opacity-0");
+
+    scale = 0.92;
+    applyTransform(true);
+
+    requestAnimationFrame(() => {
+      scale = 1;
+      applyTransform(true);
+    });
+
+    window.setTimeout(() => {
+      applyTransform(false);
+    }, 320);
+  };
+
+  const closeLightbox = () => {
+    if (!(lightbox instanceof HTMLDivElement) || !(lightboxImage instanceof HTMLImageElement)) return;
+
+    translateX = 0;
+    translateY = 0;
+    scale = 0.92;
+    applyTransform(true);
+    lightbox.classList.add("opacity-0");
+
+    window.setTimeout(() => {
+      lightbox.setAttribute("aria-hidden", "true");
+      lightbox.classList.add("pointer-events-none");
+      lightboxImage.src = "";
+      lightboxImage.alt = "";
+      resetTransformState();
+      applyTransform(false);
+    }, 300);
+  };
+
+  const onPointerDown = (event) => {
+    if (!(lightboxImage instanceof HTMLImageElement)) return;
+    if (lightbox?.getAttribute("aria-hidden") !== "false") return;
+
+    pointers.set(event.pointerId, event);
+    lightboxImage.setPointerCapture(event.pointerId);
+
+    if (pointers.size === 2) {
+      initializePinch();
+      return;
+    }
+
+    if (scale <= 1) return;
+
+    isDragging = true;
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    applyTransform(false);
+  };
+
+  const onPointerMove = (event) => {
+    if (!(lightboxImage instanceof HTMLImageElement)) return;
+    if (!pointers.has(event.pointerId)) return;
+
+    pointers.set(event.pointerId, event);
+
+    if (pointers.size === 2 && pinchStartDistance > 0) {
+      const [a, b] = Array.from(pointers.values());
+      const currentDistance = getDistance(a, b);
+      const center = getCenter(a, b);
+
+      scale = clamp((currentDistance / pinchStartDistance) * pinchStartScale, minScale, maxScale);
+      translateX = pinchStartTranslateX + (center.x - pinchStartCenterX);
+      translateY = pinchStartTranslateY + (center.y - pinchStartCenterY);
+      clampPan();
+      applyTransform(false);
+      return;
+    }
+
+    if (!isDragging || scale <= 1) return;
+
+    const deltaX = event.clientX - lastPointerX;
+    const deltaY = event.clientY - lastPointerY;
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+
+    translateX += deltaX;
+    translateY += deltaY;
+    clampPan();
+    applyTransform(false);
+  };
+
+  const onPointerUp = (event) => {
+    if (!(lightboxImage instanceof HTMLImageElement)) return;
+
+    pointers.delete(event.pointerId);
+
+    if (pointers.size < 2) {
+      pinchStartDistance = 0;
+    }
+
+    if (pointers.size === 1) {
+      const [remaining] = Array.from(pointers.values());
+      lastPointerX = remaining.clientX;
+      lastPointerY = remaining.clientY;
+    }
+
+    isDragging = false;
+
+    if (scale <= 1) {
+      translateX = 0;
+      translateY = 0;
+      scale = 1;
+      applyTransform(true);
+    } else {
+      clampPan();
+      applyTransform(false);
+    }
+  };
+
+  const onWheel = (event) => {
+    if (!(lightboxImage instanceof HTMLImageElement)) return;
+    if (lightbox?.getAttribute("aria-hidden") !== "false") return;
+
+    event.preventDefault();
+
+    const delta = -event.deltaY;
+    const zoomStep = delta > 0 ? 0.12 : -0.12;
+    scale = clamp(scale + zoomStep, minScale, maxScale);
+
+    if (scale <= 1) {
+      translateX = 0;
+      translateY = 0;
+    }
+
+    clampPan();
+    applyTransform(false);
+  };
+
+  galleryButtons.forEach((button) => {
+    button.addEventListener("click", () => openLightbox(button));
+  });
+
+  lightboxClose?.addEventListener("click", closeLightbox);
+
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+
+  lightboxImage?.addEventListener("pointerdown", onPointerDown);
+  lightboxImage?.addEventListener("pointermove", onPointerMove);
+  lightboxImage?.addEventListener("pointerup", onPointerUp);
+  lightboxImage?.addEventListener("pointercancel", onPointerUp);
+  lightboxImage?.addEventListener("pointerleave", onPointerUp);
+  lightboxImage?.addEventListener("wheel", onWheel, { passive: false });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && lightbox?.getAttribute("aria-hidden") === "false") {
+      closeLightbox();
+    }
+  });
+</script>

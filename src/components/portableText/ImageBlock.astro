@@ -1,0 +1,23 @@
+---
+type ImageBlockNode = {
+  path?: string;
+  altText?: string;
+  caption?: string;
+};
+
+const { node } = Astro.props as { node: ImageBlockNode };
+---
+
+<figure class="my-6">
+  {
+    node?.path && (
+      <img
+        src={node.path}
+        alt={node.altText ?? "Content image"}
+        class="w-full rounded-lg object-cover"
+        loading="lazy"
+      />
+    )
+  }
+  {node?.caption && <figcaption class="mt-2 text-sm">{node.caption}</figcaption>}
+</figure>

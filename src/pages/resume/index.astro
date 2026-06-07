@@ -1,0 +1,341 @@
+---
+import MainLayout from "../../layouts/main.astro";
+import { sanityClient } from "sanity:client";
+
+type LinkItem = {
+    label?: string;
+    url?: string;
+    description?: string;
+};
+
+type SkillItem = {
+    name?: string;
+    url?: string;
+};
+
+type SkillGroup = {
+    category?: string;
+    skills?: SkillItem[];
+};
+
+type Job = {
+    company?: string;
+    title?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    isCurrent?: boolean;
+    summary?: string;
+    responsibilities?: string[];
+    technologies?: string[];
+};
+
+type Certification = {
+    title?: string;
+    issuer?: string;
+    credentialUrl?: string;
+    expirationDate?: string;
+    image?: {
+        path?: string;
+        altText?: string;
+    };
+};
+
+type Education = {
+    degree?: string;
+    focus?: string;
+    graduationDate?: string;
+    institution?: string;
+    location?: string;
+};
+
+type Resume = {
+    name?: string;
+    headline?: string;
+    location?: string;
+    profileImage?: {
+        path?: string;
+        altText?: string;
+    };
+    downloadResume?: {
+        asset?: {
+            url?: string;
+        };
+    };
+    socialLinks?: LinkItem[];
+    experience?: Job[];
+    certifications?: Certification[];
+    education?: Education[];
+    accolades?: string[];
+    skills?: SkillGroup[];
+    additionalLinks?: LinkItem[];
+    mainSitesDeveloped?: LinkItem[];
+};
+
+const RESUME_QUERY = `*[_type == "resume"][0]{
+    name,
+    headline,
+    location,
+    profileImage,
+    downloadResume{asset->{url}},
+    socialLinks,
+    experience,
+    certifications,
+    education,
+    accolades,
+    skills,
+    additionalLinks,
+    mainSitesDeveloped
+}`;
+
+const resume = await sanityClient.fetch<Resume | null>(RESUME_QUERY);
+
+const formatMonthYear = (value?: string) => {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+};
+---
+
+<MainLayout title="Resume | Astro Portfolio">
+<main class="container mx-auto min-h-screen max-w-6xl p-8">
+    {
+        !resume ? (
+            <section aria-labelledby="resume-unavailable">
+                <h1 id="resume-unavailable" class="text-3xl font-bold">Resume unavailable</h1>
+                <p>The resume document could not be found in Sanity.</p>
+            </section>
+        ) : (
+            <>
+
+
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div>
+                <header class="mb-10">
+                    <h1 class="text-4xl font-bold">{resume.name}</h1>
+                    <p class="mt-2 text-xl">{resume.headline}</p>
+                    {resume.location && <p>{resume.location}</p>}
+
+                    {resume.profileImage?.path && (
+                        <img
+                            src={resume.profileImage.path}
+                            alt={resume.profileImage.altText ?? `${resume.name ?? "Profile"} photo`}
+                            class="mt-4 h-28 w-28 rounded-full object-cover"
+                            width="112"
+                            height="112"
+                        />
+                    )}
+
+                    <nav aria-label="Social links" class="mt-4">
+                        <ul class="flex flex-wrap gap-3">
+                            {resume.socialLinks?.map((link) => (
+                                <li>
+                                    <a href={link.url} target="_blank" rel="noreferrer" class="underline">
+                                        {link.label}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+
+                    {resume.downloadResume?.asset?.url && (
+                        <p class="mt-4">
+                            <a
+                                href={resume.downloadResume.asset.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                class="underline"
+                            >
+                                Download Resume
+                            </a>
+                        </p>
+                    )}
+                </header>
+
+                {!!resume.experience?.length && (
+                    <section aria-labelledby="experience-heading" class="mb-10">
+                        <h2 id="experience-heading" class="mb-4 text-3xl font-bold">Experience</h2>
+                        <div class="space-y-8">
+                            {resume.experience.map((job) => (
+                                <article>
+                                    <header>
+                                        <h3 class="text-2xl font-semibold">{job.company}</h3>
+                                        {job.summary && <p class="mt-0 text-sm">{job.summary}</p>}
+
+                                        <p class="font-medium mt-3">{job.title}</p>
+                                        <p>
+                                            {formatMonthYear(job.startDate)} - {job.isCurrent ? "Present" : formatMonthYear(job.endDate)}
+                                        </p>
+                                        {job.location && <p>{job.location}</p>}
+                                    </header>
+
+                                    {!!job.responsibilities?.length && (
+                                        <>
+                                            <h4 class="mt-4 text-lg font-semibold">Responsibilities</h4>
+                                            <ul class="list-disc pl-6">
+                                                {job.responsibilities.map((responsibility) => (
+                                                    <li>{responsibility}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+
+                                    {!!job.technologies?.length && (
+                                        <>
+                                            <h4 class="mt-4 text-lg font-semibold">Technologies</h4>
+                                            <ul class="flex flex-wrap gap-2">
+                                                {job.technologies.map((tech) => (
+                                                    <li class="rounded border px-2 py-1">{tech}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+                                </article>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {!!resume.certifications?.length && (
+                    <section aria-labelledby="certifications-heading" class="mb-10">
+                        <h2 id="certifications-heading" class="mb-4 text-3xl font-bold">Certification</h2>
+                        <ul class="space-y-4">
+                            {resume.certifications.map((cert) => (
+                                <li>
+                                    <article>
+                                        <div class="flex items-start gap-3">
+                                            {cert.image?.path && (
+                                                <img
+                                                    src={cert.image.path}
+                                                    alt={cert.image.altText ?? cert.title ?? "Certification image"}
+                                                    class="h-10 w-10 object-contain"
+                                                    width="40"
+                                                    height="40"
+                                                />
+                                            )}
+
+                                            <div>
+                                                <h3 class="font-semibold">
+                                                    {cert.credentialUrl ? (
+                                                        <a href={cert.credentialUrl} target="_blank" rel="noreferrer" class="underline">
+                                                            {cert.title}
+                                                        </a>
+                                                    ) : (
+                                                        cert.title
+                                                    )}
+                                                </h3>
+                                                {cert.issuer && <p>{cert.issuer}</p>}
+                                                {cert.expirationDate && <p>Expires {formatMonthYear(cert.expirationDate)}</p>}
+                                            </div>
+                                        </div>
+                                    </article>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {!!resume.education?.length && (
+                    <section aria-labelledby="education-heading" class="mb-10">
+                        <h2 id="education-heading" class="mb-4 text-3xl font-bold">Education</h2>
+                        <ul class="space-y-4">
+                            {resume.education.map((item) => (
+                                <li>
+                                    <article>
+                                        <h3 class="text-xl font-semibold">{item.degree}</h3>
+                                        {item.focus && <p>{item.focus}</p>}
+                                        <p>{item.institution}</p>
+                                        {item.location && <p>{item.location}</p>}
+                                        {item.graduationDate && <p>{formatMonthYear(item.graduationDate)}</p>}
+                                    </article>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {!!resume.accolades?.length && (
+                    <section aria-labelledby="accolades-heading" class="mb-10">
+                        <h2 id="accolades-heading" class="mb-4 text-3xl font-bold">Accolades</h2>
+                        <ul class="list-disc space-y-2 pl-6">
+                            {resume.accolades.map((accolade) => (
+                                <li>{accolade}</li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {!!resume.additionalLinks?.length && (
+                    <section aria-labelledby="additional-links-heading">
+                        <h2 id="additional-links-heading" class="mb-4 text-3xl font-bold">Additional Links</h2>
+                        <ul class="list-disc space-y-2 pl-6">
+                            {resume.additionalLinks.map((link) => (
+                                <li>
+                                    <a href={link.url} target="_blank" rel="noreferrer" class="underline">
+                                        {link.label}
+                                    </a>
+                                    {link.description && <span> - {link.description}</span>}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                </div>
+
+
+
+                <aside>
+                    {!!resume.mainSitesDeveloped?.length && (
+                        <section aria-labelledby="main-sites-developed-heading" class="mb-10">
+                            <h2 id="main-sites-developed-heading" class="mb-4 text-3xl font-bold">Main sites developed</h2>
+                            <ul class="list-disc pl-6">
+                                {resume.mainSitesDeveloped.map((site) => (
+                                    <li>
+                                        <a href={site.url} target="_blank" rel="noreferrer" class="underline">
+                                            {site.label}
+                                        </a>
+                                        {site.description && <span>: {site.description}</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
+
+                    {!!resume.skills?.length && (
+                        <section aria-labelledby="skills-heading" class="mb-10">
+                            <h2 id="skills-heading" class="mb-4 text-3xl font-bold">Skills</h2>
+                            <div class="space-y-5">
+                                {resume.skills.map((group) => (
+                                    <article>
+                                        <h3 class="text-xl font-semibold">{group.category}</h3>
+                                        <ul class="mt-2 flex flex-wrap gap-2" aria-label={`${group.category} skills`}>
+                                            {group.skills?.map((skill) => (
+                                                <li class="rounded px-1 py-1 bg-purple-100 text-gray-800 text-xs text-gray-800">
+                                                    {skill.url ? (
+                                                        <a href={skill.url} target="_blank" rel="noreferrer" class="">
+                                                            {skill.name}
+                                                        </a>
+                                                    ) : (
+                                                        <span>{skill.name}</span>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </article>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                </aside>
+                </div>
+
+            </>
+        )
+    }
+</main>
+</MainLayout>

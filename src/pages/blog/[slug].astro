@@ -1,0 +1,52 @@
+---
+import type { SanityDocument } from "@sanity/client";
+import MainLayout from "../../layouts/main.astro";
+import { sanityClient } from "sanity:client";
+import { PortableText } from "astro-portabletext";
+import { portableTextComponents } from "../../components/portableText/components";
+
+const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]`;
+const post = await sanityClient.fetch<SanityDocument>(POST_QUERY, Astro.params);
+
+export async function getStaticPaths(): Promise<{ params: { slug: string } }> {
+  const SLUGS_QUERY = `*[_type == "post" && defined(slug.current)]{
+    "params": {"slug": slug.current}
+  }`;
+  return await sanityClient.fetch(SLUGS_QUERY);
+}
+
+const postImageUrl = post.heroImage?.path
+  ? `${post.heroImage.path}?twic=v1/focus=auto/cover=1800x1400/format=webp`
+  : null;
+---
+
+<MainLayout title={`${post?.title ?? "Blog Post"} | Blog`}>
+  <main class="min-h-screen">
+    <div class="container mx-auto max-w-4xl p-8">
+      <a href="/blog" class="hover:underline">&larr; Back to blog</a>
+    </div>
+
+    {
+      postImageUrl && (
+        <div class="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden">
+          <img
+            src={postImageUrl}
+            alt={post.heroImage?.altText ?? post.title}
+            class="blog-detail-hero-image aspect-[3/2] w-full object-cover"
+            transition:name={`blog-image-${post.slug.current}`}
+            width="1800"
+            height="1200"
+          />
+        </div>
+      )
+    }
+
+    <article class="container mx-auto max-w-4xl p-8">
+      <h1 class="text-4xl font-bold mb-8">{post.title}</h1>
+      <div class="prose max-w-none">
+        <p>Published: {new Date(post.publishedAt).toLocaleDateString()}</p>
+        {Array.isArray(post.body) && <PortableText value={post.body} components={portableTextComponents} />}
+      </div>
+    </article>
+  </main>
+</MainLayout>

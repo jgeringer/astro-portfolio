@@ -1,0 +1,20 @@
+---
+type CodeSnippetNode = {
+  title?: string;
+  filename?: string;
+  language?: string;
+  code?: string;
+};
+
+const { node } = Astro.props as { node: CodeSnippetNode };
+---
+
+<figure class="my-6">
+  {(node?.title || node?.filename) && (
+    <figcaption class="mb-2 text-sm font-semibold">
+      {node?.title ?? node?.filename}
+      {node?.title && node?.filename ? ` (${node.filename})` : ""}
+    </figcaption>
+  )}
+  <pre class="overflow-x-auto rounded-lg border p-4"><code data-language={node?.language ?? "text"}>{node?.code}</code></pre>
+</figure>

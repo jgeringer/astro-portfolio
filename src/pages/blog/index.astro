@@ -1,0 +1,74 @@
+---
+import type { SanityDocument } from "@sanity/client";
+import MainLayout from "../../layouts/main.astro";
+import { sanityClient } from "sanity:client";
+
+const BLOG_QUERY = `*[
+  _type == "post"
+  && defined(slug.current)
+]|order(publishedAt desc)[0...12]{_id, title, slug, publishedAt, heroImage}`;
+
+const blogPosts = await sanityClient.fetch<SanityDocument[]>(BLOG_QUERY);
+---
+
+<MainLayout title="Blog | Astro Portfolio">
+  <main class="container mx-auto min-h-screen max-w-4xl p-8">
+    <h1 class="text-4xl font-bold mb-8">Blog</h1>
+    <ul class="grid gap-6 sm:grid-cols-2">
+      {blogPosts.map((post, index) => (
+          <li
+            class:list={[
+              "group relative overflow-hidden rounded-md border-4 bg-amber-50 shadow-[6px_6px_0px_#78350f] transition-transform duration-150 hover:-translate-y-1",
+              index % 4 === 0 && "border-amber-900 shadow-[6px_6px_0px_#78350f]",
+              index % 4 === 1 && "border-sky-900 shadow-[6px_6px_0px_#0c4a6e]",
+              index % 4 === 2 && "border-emerald-900 shadow-[6px_6px_0px_#14532d]",
+              index % 4 === 3 && "border-rose-900 shadow-[6px_6px_0px_#881337]",
+            ]}
+          >
+            <a
+              href={`/blog/${post.slug.current}`}
+              class="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+            >
+              <article class="relative h-full">
+                <div class="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_40%),repeating-linear-gradient(45deg,rgba(120,53,15,0.06)_0,rgba(120,53,15,0.06)_2px,transparent_2px,transparent_6px)] opacity-70"></div>
+
+                <header class="relative z-20 border-b-2 border-current bg-amber-200 px-3 py-2 text-xs font-bold tracking-wide text-amber-900 group-[.border-sky-900]:bg-sky-200 group-[.border-sky-900]:text-sky-900 group-[.border-emerald-900]:bg-emerald-200 group-[.border-emerald-900]:text-emerald-900 group-[.border-rose-900]:bg-rose-200 group-[.border-rose-900]:text-rose-900">
+                  ARTICLE #{String(index + 1).padStart(2, "0")}
+                </header>
+
+                {post.heroImage?.path && (
+                  <img
+                    src={`${post.heroImage.path}?twic=v1/focus=auto/cover=600x400/format=webp`}
+                    alt={post.title}
+                    class="relative z-20 aspect-[3/2] w-full border-b-2 border-current object-cover"
+                    transition:name={`blog-image-${post.slug.current}`}
+                    width="600"
+                    height="400"
+                  />
+                )}
+
+                <div class="relative z-20 space-y-3 p-4">
+                  <h2 class="text-xl font-extrabold uppercase leading-tight tracking-tight text-amber-950 group-[.border-sky-900]:text-sky-950 group-[.border-emerald-900]:text-emerald-950 group-[.border-rose-900]:text-rose-950">
+                    {post.title}
+                  </h2>
+                  <p class="text-sm font-medium text-amber-900 group-[.border-sky-900]:text-sky-900 group-[.border-emerald-900]:text-emerald-900 group-[.border-rose-900]:text-rose-900">
+                    Published {new Date(post.publishedAt).toLocaleDateString()}
+                  </p>
+                  <dl class="grid grid-cols-2 gap-2 rounded border-2 border-dashed border-current bg-white/65 p-2 text-xs font-semibold text-amber-900 group-[.border-sky-900]:text-sky-900 group-[.border-emerald-900]:text-emerald-900 group-[.border-rose-900]:text-rose-900">
+                    <div>
+                      <dt class="uppercase tracking-wide">Year</dt>
+                      <dd>{new Date(post.publishedAt).getFullYear()}</dd>
+                    </div>
+                    <div>
+                      <dt class="uppercase tracking-wide">No.</dt>
+                      <dd>{String(index + 1).padStart(3, "0")}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </article>
+            </a>
+          </li>
+        ))}
+    </ul>
+  </main>
+</MainLayout>

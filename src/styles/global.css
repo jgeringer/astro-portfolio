@@ -1,1 +1,38 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+::view-transition-group(*) {
+	animation-duration: 520ms;
+	animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(*),
+::view-transition-new(*) {
+	transform-origin: top left;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 280ms;
+}
+
+.blog-detail-hero-image {
+	object-position: 50% 18%;
+	will-change: object-position;
+	animation: blog-pan-down 14s ease-out 520ms both;
+}
+
+@keyframes blog-pan-down {
+	0% {
+		object-position: 50% 18%;
+	}
+	100% {
+		object-position: 50% 72%;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.blog-detail-hero-image {
+		animation: none;
+	}
+}

@@ -1,0 +1,211 @@
+---
+import MainLayout from "../../layouts/main.astro";
+import { sanityClient } from "sanity:client";
+
+type PizzaStyle = {
+  title?: string;
+  slug?: { current?: string };
+};
+
+type Pizza = {
+  _id: string;
+  name?: string;
+  slug?: { current?: string };
+  summary?: string;
+  establishedYear?: number;
+  area?: string;
+  heroImage?: { path?: string; altText?: string };
+  styles?: PizzaStyle[];
+  highlights?: string[];
+};
+
+type PizzaSettings = {
+  title?: string;
+  subtitle?: string;
+  stylesFilterLabel?: string;
+  sortLabel?: string;
+};
+
+const PIZZAS_QUERY = `*[_type == "pizza" && defined(slug.current)]{
+  _id,
+  name,
+  slug,
+  summary,
+  establishedYear,
+  area,
+  heroImage,
+  highlights,
+  styles[]->{
+    title,
+    slug
+  }
+}`;
+
+const PIZZA_SETTINGS_QUERY = `*[_type == "pizzaSettings"][0]{
+  title,
+  subtitle,
+  stylesFilterLabel,
+  sortLabel
+}`;
+
+const pizzas = await sanityClient.fetch<Pizza[]>(PIZZAS_QUERY);
+const settings = await sanityClient.fetch<PizzaSettings | null>(PIZZA_SETTINGS_QUERY);
+
+const styleOptionsMap = new Map<string, string>();
+for (const pizza of pizzas) {
+  for (const style of pizza.styles ?? []) {
+    const slug = style.slug?.current;
+    if (!slug) continue;
+    styleOptionsMap.set(slug, style.title ?? slug);
+  }
+}
+
+const styleOptions = Array.from(styleOptionsMap.entries())
+  .map(([slug, title]) => ({ slug, title }))
+  .sort((a, b) => a.title.localeCompare(b.title));
+
+---
+
+<MainLayout title="Pizzas | Astro Portfolio">
+  <main class="container mx-auto min-h-screen max-w-6xl p-8">
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold">{settings?.title ?? "Chicago Pizzas"}</h1>
+      {settings?.subtitle && <p class="mt-2 text-lg">{settings.subtitle}</p>}
+    </header>
+
+    <section aria-label="Pizza filters" class="mb-8 rounded-lg border p-4">
+      <h2 class="text-xl font-semibold mb-4">Filters</h2>
+      <form class="grid gap-4 md:grid-cols-2 lg:grid-cols-4" onsubmit="return false;">
+        <label class="flex flex-col gap-1" for="styleFilter">
+          <span>{settings?.stylesFilterLabel ?? "Styles"}</span>
+          <select id="styleFilter" class="rounded border p-2">
+            <option value="all">All styles</option>
+            {styleOptions.map((style) => (
+              <option value={style.slug}>{style.title}</option>
+            ))}
+          </select>
+        </label>
+
+        <label class="flex flex-col gap-1" for="sortFilter">
+          <span>{settings?.sortLabel ?? "Sort by"}</span>
+          <select id="sortFilter" class="rounded border p-2">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+          </select>
+        </label>
+
+        <label class="mt-6 inline-flex items-center gap-2" for="includesRCFilter">
+          <input id="includesRCFilter" type="checkbox" />
+          <span>Includes RC Cola</span>
+        </label>
+
+        <label class="mt-6 inline-flex items-center gap-2" for="goodColdFilter">
+          <input id="goodColdFilter" type="checkbox" />
+          <span>Good Cold</span>
+        </label>
+      </form>
+    </section>
+
+    <p id="noResultsMessage" class="mb-6 hidden">No pizzas match the selected filters.</p>
+
+    <ul id="pizzaList" class="grid gap-6 md:grid-cols-2">
+      {pizzas.map((pizza) => {
+        const styleSlugs = (pizza.styles ?? [])
+          .map((style) => style.slug?.current)
+          .filter((slug): slug is string => Boolean(slug));
+        const highlightsText = (pizza.highlights ?? []).join(" ").toLowerCase();
+
+        return (
+          <li
+            class="pizza-item rounded-lg border"
+            data-style-slugs={styleSlugs.join(",")}
+            data-highlights={highlightsText}
+            data-established-year={pizza.establishedYear ?? 0}
+          >
+            <a href={`/pizzas/${pizza.slug?.current}`} class="block h-full p-4 hover:underline">
+              {pizza.heroImage?.path && (
+                <img
+                  src={`${pizza.heroImage.path}?twic=v1/cover=800x600/format=webp`}
+                  alt={pizza.heroImage.altText ?? `${pizza.name ?? "Pizza"} image`}
+                  class="mb-4 aspect-video w-full rounded object-cover"
+                  width="640"
+                  height="360"
+                  loading="lazy"
+                />
+              )}
+              <h2 class="text-2xl font-semibold">{pizza.name}</h2>
+              {pizza.summary && <p class="mt-2">{pizza.summary}</p>}
+              {!!pizza.establishedYear && <p class="mt-2 text-sm">Established: {pizza.establishedYear}</p>}
+              {!!pizza.styles?.length && (
+                <ul class="mt-3 flex flex-wrap gap-2" aria-label="Pizza styles">
+                  {pizza.styles.map((style) => (
+                    <li class="rounded border px-2 py-1 text-sm">{style.title}</li>
+                  ))}
+                </ul>
+              )}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </main>
+</MainLayout>
+
+<script>
+  const styleFilter = document.getElementById("styleFilter");
+  const sortFilter = document.getElementById("sortFilter");
+  const includesRCFilter = document.getElementById("includesRCFilter");
+  const goodColdFilter = document.getElementById("goodColdFilter");
+  const pizzaList = document.getElementById("pizzaList");
+  const noResultsMessage = document.getElementById("noResultsMessage");
+
+  const pizzaItems = pizzaList ? Array.from(pizzaList.querySelectorAll(".pizza-item")) : [];
+
+  const applyFilters = () => {
+    if (!pizzaList) return;
+
+    const selectedStyle = styleFilter instanceof HTMLSelectElement ? styleFilter.value : "all";
+    const sortOrder = sortFilter instanceof HTMLSelectElement ? sortFilter.value : "newest";
+    const requiresIncludes = includesRCFilter instanceof HTMLInputElement ? includesRCFilter.checked : false;
+    const requiresGoodCold = goodColdFilter instanceof HTMLInputElement ? goodColdFilter.checked : false;
+
+    const visibleItems = pizzaItems.filter((item) => {
+      const styleSlugs = (item.getAttribute("data-style-slugs") || "")
+        .split(",")
+        .map((slug) => slug.trim())
+        .filter(Boolean);
+      const highlights = (item.getAttribute("data-highlights") || "").toLowerCase();
+
+      const styleMatch = selectedStyle === "all" || styleSlugs.includes(selectedStyle);
+      const includesMatch = !requiresIncludes || highlights.includes("includes");
+      const goodColdMatch = !requiresGoodCold || highlights.includes("good cold");
+
+      return styleMatch && includesMatch && goodColdMatch;
+    });
+
+    visibleItems.sort((a, b) => {
+      const aYear = Number.parseInt(a.getAttribute("data-established-year") || "0", 10);
+      const bYear = Number.parseInt(b.getAttribute("data-established-year") || "0", 10);
+      return sortOrder === "oldest" ? aYear - bYear : bYear - aYear;
+    });
+
+    pizzaItems.forEach((item) => {
+      item.classList.add("hidden");
+    });
+
+    visibleItems.forEach((item) => {
+      item.classList.remove("hidden");
+      pizzaList.appendChild(item);
+    });
+
+    if (noResultsMessage) {
+      noResultsMessage.classList.toggle("hidden", visibleItems.length !== 0);
+    }
+  };
+
+  [styleFilter, sortFilter, includesRCFilter, goodColdFilter].forEach((element) => {
+    element?.addEventListener("change", applyFilters);
+  });
+
+  applyFilters();
+</script>
