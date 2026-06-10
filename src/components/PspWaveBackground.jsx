@@ -9,8 +9,8 @@ function CameraDrift() {
 
   useEffect(() => {
     const onPointerMove = (event) => {
-      const x = (event.clientX / window.innerWidth) * 2 - 1;
-      const y = (event.clientY / window.innerHeight) * 2 - 1;
+      const x = (event.clientX / window.innerWidth) * 4 - 1;
+      const y = (event.clientY / window.innerHeight) * 8 - 1;
       pointerTarget.current.x = x;
       pointerTarget.current.y = y;
     };
@@ -35,7 +35,7 @@ function CameraDrift() {
 
     state.camera.position.x += (driftX - state.camera.position.x) * smoothing;
     state.camera.position.y += (-driftY - state.camera.position.y) * smoothing;
-    state.camera.lookAt(driftX * 0.26, -driftY * 0.22, 0);
+    state.camera.lookAt(driftX * 0.66, -driftY * 0.22, 0);
   });
 
   return null;

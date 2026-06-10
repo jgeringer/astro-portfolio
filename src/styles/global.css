@@ -16,6 +16,21 @@
 	animation-duration: 280ms;
 }
 
+.pixel-reveal-overlay {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	pointer-events: none;
+	z-index: 9999;
+	image-rendering: pixelated;
+	contain: strict;
+}
+
+body.pixel-reveal-active > *:not(.pixel-reveal-overlay) {
+	visibility: hidden;
+}
+
 .blog-detail-hero-image {
 	object-position: 50% 18%;
 	will-change: object-position;

@@ -33,7 +33,7 @@ const blogPosts = await sanityClient.fetch<SanityDocument[]>(BLOG_QUERY);
                 <div class="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_40%),repeating-linear-gradient(45deg,rgba(120,53,15,0.06)_0,rgba(120,53,15,0.06)_2px,transparent_2px,transparent_6px)] opacity-70"></div>
 
                 <header class="relative z-20 border-b-2 border-current bg-amber-200 px-3 py-2 text-xs font-bold tracking-wide text-amber-900 group-[.border-sky-900]:bg-sky-200 group-[.border-sky-900]:text-sky-900 group-[.border-emerald-900]:bg-emerald-200 group-[.border-emerald-900]:text-emerald-900 group-[.border-rose-900]:bg-rose-200 group-[.border-rose-900]:text-rose-900">
-                  ARTICLE #{String(index + 1).padStart(2, "0")}
+                  Article #{String(index + 1).padStart(2, "0")}
                 </header>
 
                 {post.heroImage?.path && (
